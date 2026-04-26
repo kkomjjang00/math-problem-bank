@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고등수학 문제은행 등록 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 p-4 md:p-10">
+    <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-2xl shadow-2xl border border-slate-200">
+        <h1 class="text-3xl font-extrabold text-slate-800 mb-2">📝 문제 등록 시스템</h1>
+        <p class="text-slate-500 mb-8 border-b pb-4">고등수학(상) 전 단원 유형 수록</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">1. 대단원</label>
+                <select id="mainUnit" class="w-full border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none" onchange="updateSubUnits()">
+                    <option value="">선택</option>
+                    <option value="I. 다항식">I. 다항식</option>
+                    <option value="II. 방정식">II. 방정식</option>
+                    <option value="III. 부등식">III. 부등식</option>
+                    <option value="IV. 순열과 조합">IV. 순열과 조합</option>
+                    <option value="V. 행렬">V. 행렬</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">2. 소단원</label>
+                <select id="subUnit" class="w-full border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none" onchange="updateTypes()">
+                    <option value="">대단원 먼저 선택</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">3. 유형</label>
+                <select id="typeUnit" class="w-full border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none">
+                    <option value="">소단원 먼저 선택</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">문제 지문 및 보기</label>
+                <textarea class="w-full border-2 border-slate-200 p-4 rounded-xl h-64 focus:border-blue-500 outline-none font-mono" placeholder="지문을 입력하세요. 수식은 LaTeX 형식을 권장합니다."></textarea>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">정답</label>
+                    <input type="text" class="w-full border-2 border-slate-200 p-3 rounded-xl" placeholder="예: 1번">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">난이도</label>
+                    <select class="w-full border-2 border-slate-200 p-3 rounded-xl">
+                        <option>하</option>
+                        <option selected>중</option>
+                        <option>상</option>
+                        <option>최상</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4 py-4">
+                <input type="file" id="fileInput" class="hidden">
+                <button onclick="document.getElementById('fileInput').click()" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded-lg text-sm font-bold transition">이미지 첨부</button>
+                <span class="text-xs text-slate-400">이미지 파일이 있을 경우 업로드하세요.</span>
+            </div>
+
+            <button onclick="alert('데이터가 임시 보관되었습니다. 서버 연동이 필요합니다.')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-1">
+                문제 저장하기
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const categoryData = {
+            "I. 다항식": {
+                "01 다항식의 연산": ["유형 01 다항식의 덧셈과 뺄셈", "유형 02 다항식의 전개식에서 계수 구하기", "유형 03 곱셈 공식을 이용한 다항식의 전개", "유형 04 공통부분이 있는 다항식의 전개", "유형 05 곱셈 공식의 변형; x²+y², x³+y³", "유형 06 곱셈 공식의 변형; x²+1/x², x³+1/x³", "유형 07 곱셈 공식의 변형; a²+b²+c², a³+b³+c³", "유형 08 곱셈 공식을 이용한 수의 계산", "유형 09 다항식의 나눗셈; 몫과 나머지", "유형 10 다항식의 나눗셈; A=BQ+R", "유형 11 몫과 나머지의 변형", "유형 12 다항식의 연산의 도형에의 활용"],
+                "02 나머지 정리와 인수분해": ["유형 01 계수 비교법", "유형 02 수치 대입법", "유형 03 항등식의 성질", "유형 04 항등식에서 계수의 합 구하기", "유형 05 다항식의 나눗셈과 항등식", "유형 06 일차식으로 나누었을 때의 나머지", "유형 07 일차식으로 나누었을 때의 나머지; 미정계수 구하기", "유형 08 이차식으로 나누었을 때의 나머지", "유형 09 삼차식으로 나누었을 때의 나머지", "유형 10 P(ax+b)를 x-a로 나누었을 때의 나머지", "유형 11 몫 Q(x)를 x-a로 나누었을 때의 나머지", "유형 12 나머지 정리를 활용한 수의 나눗셈", "유형 13 일차식으로 나누어떨어지는 다항식", "유형 14 이차식으로 나누어떨어지는 다항식", "유형 15 조립제법", "유형 16 조립제법을 이용하여 항등식의 미정계수 구하기", "유형 17 인수분해 공식을 이용한 다항식의 인수분해", "유형 18 공통부분이 있는 다항식의 인수분해", "유형 19 x⁴+ax²+b 꼴의 다항식의 인수분해", "유형 20 여러 개의 문자를 포함한 다항식의 인수분해", "유형 21 인수 정리를 이용한 다항식의 인수분해", "유형 22 계수가 대칭인 사차식의 인수분해", "유형 23 조건이 주어진 다항식의 인수분해", "유형 24 인수분해와 삼각형의 모양", "유형 25 인수분해를 이용하여 식의 값 구하기", "유형 26 인수분해를 이용한 복잡한 수의 계산"]
+            },
+            "II. 방정식": {
+                "03 복소수": ["유형 01 복소수의 뜻과 분류", "유형 02 복소수의 사칙연산", "유형 03 복소수가 주어질 때의 식의 값 구하기", "유형 04 복소수 z 또는 z²이 실수가 되기 위한 조건", "유형 05 복소수가 서로 같을 조건", "유형 06 켤레복소수의 계산", "유형 07 켤레복소수의 성질", "유형 08 켤레복소수의 성질을 이용한 계산", "유형 09 조건을 만족시키는 복소수 구하기", "유형 10 허수단위 i의 거듭제곱", "유형 11 복소수의 거듭제곱", "유형 12 음수의 제곱근의 계산", "유형 13 음수의 제곱근의 성질"],
+                "04 이차방정식": ["유형 01 이차방정식의 풀이", "유형 02 한 근이 주어진 이차방정식", "유형 03 절댓값 기호를 포함한 방정식", "유형 04 가우스 기호를 포함한 방정식", "유형 05 이차방정식의 활용", "유형 06 이차방정식의 근의 판별", "유형 07 계수의 조건이 주어진 이차방정식의 근의 판별", "유형 08 이차방정식의 판별식과 삼각형의 모양", "유형 09 이차식이 완전제곱식이 되는 조건", "유형 10 이차방정식의 근과 계수의 관계를 이용하여 식의 값 구하기 (1)", "유형 11 이차방정식의 근과 계수의 관계를 이용하여 식의 값 구하기 (2)", "유형 12 미정계수의 결정; 근의 조건이 주어진 경우", "유형 13 미정계수의 결정; 근의 관계식이 주어진 경우", "유형 14 미정계수의 결정; 두 이차방정식이 주어진 경우", "유형 15 이차방정식의 작성", "유형 16 잘못 보고 푼 이차방정식", "유형 17 이차방정식 f(x)=0의 근을 이용하여 f(ax+b)=0의 근 구하기", "유형 18 이차식의 인수분해", "유형 19 f(a)=f(b)=k를 만족시키는 이차식 f(x) 구하기", "유형 20 이차방정식의 켤레근"],
+                "05 이차방정식과 이차함수": ["유형 01 이차함수의 그래프와 x축의 교점", "유형 02 이차함수의 그래프와 x축의 위치 관계", "유형 03 이차함수의 그래프와 직선의 교점", "유형 04 이차함수의 그래프와 직선의 위치 관계", "유형 05 이차함수의 그래프에 접하는 직선의 방정식", "유형 06 이차함수의 최대, 최소", "유형 07 제한된 범위에서의 이차함수의 최대, 최소", "유형 08 공통부분이 있는 함수의 최대, 최소", "유형 09 완전제곱식을 이용한 이차식의 최대, 최소", "유형 10 조건을 만족시키는 이차식의 최대, 최소", "유형 11 이차함수의 최대, 최소의 활용"],
+                "06 여러 가지 방정식": ["유형 01 삼차방정식과 사차방정식의 풀이", "유형 02 공통부분이 있는 사차방정식의 풀이", "유형 03 x⁴+ax²+b=0 꼴의 방정식의 풀이", "유형 04 ax⁴+bx³+cx²+bx+a=0 꼴의 방정식의 풀이", "유형 05 근이 주어진 삼·사차방정식", "유형 06 삼차방정식의 근의 판별", "유형 07 삼차방정식의 근과 계수의 관계", "유형 08 삼차방정식의 작성", "유형 09 삼차방정식과 사차방정식의 켤레근", "유형 10 방정식 x³=1, x³=-1의 허근의 성질", "유형 11 삼차방정식과 사차방정식의 활용", "유형 12 일차방정식-이차방정식 꼴의 연립이차방정식", "유형 13 이차방정식-이차방정식 꼴의 연립이차방정식", "유형 14 대칭식으로 이루어진 연립이차방정식", "유형 15 연립이차방정식의 해의 조건", "유형 16 연립이차방정식의 활용", "유형 17 정수 조건의 부정방정식", "유형 18 실수 조건의 부정방정식"]
+            },
+            "III. 부등식": {
+                "07 일차부등식": ["유형 01 부등식의 기본 성질", "유형 02 부등식 ax > b의 풀이", "유형 03 연립일차부등식의 풀이", "유형 04 A < B < C 꼴의 부등식의 풀이", "유형 05 특수한 해를 갖는 연립일차부등식", "유형 06 해가 주어진 연립일차부등식", "유형 07 해를 갖거나 갖지 않는 연립일차부등식", "유형 08 정수인 해의 개수가 주어진 연립일차부등식", "유형 09 연립일차부등식의 활용", "유형 10 |ax+b| < c, |ax+b| > c 꼴의 부등식", "유형 11 |ax+b| < cx+d 꼴의 부등식", "유형 12 절댓값 기호가 두 개인 부등식", "유형 13 절댓값 기호를 포함한 부등식의 해의 조건"],
+                "08 이차부등식": ["유형 01 그래프를 이용한 부등식의 풀이", "유형 02 이차부등식의 풀이", "유형 03 절댓값 기호를 포함한 부등식", "유형 04 해가 주어진 이차부등식", "유형 05 부등식 f(x) < 0과 부등식 f(ax+b) < 0의 관계", "유형 06 정수인 해의 개수가 주어진 이차부등식", "유형 07 이차부등식이 해를 한 가지만 가질 조건", "유형 08 이차부등식이 해를 가질 조건", "유형 09 이차부등식이 항상 성립할 조건", "유형 10 이차부등식이 해를 갖지 않을 조건", "유형 11 제한된 범위에서 항상 성립하는 이차부등식", "유형 12 두 그래프의 위치 관계와 이차부등식; 만나는 경우", "유형 13 두 그래프의 위치 관계와 이차부등식; 만나지 않는 경우", "유형 14 이차부등식의 활용", "유형 15 연립이차부등식의 풀이", "유형 16 해가 주어진 연립이차부등식", "유형 17 정수인 해의 개수가 주어진 연립이차부등식", "유형 18 연립이차부등식의 활용", "유형 19 이차방정식의 근의 판별과 이차부등식", "유형 20 이차방정식의 실근의 부호", "유형 21 이차방정식의 근의 분리", "유형 22 사차방정식의 근의 판별"]
+            },
+            "IV. 순열과 조합": {
+                "09 순열과 조합": ["유형 01 합의 법칙", "유형 02 방정식과 부등식의 해의 개수", "유형 03 곱의 법칙", "유형 04 약수의 개수", "유형 05 지불 방법의 수와 지불 금액의 수", "유형 06 도로망에서의 경우의 수", "유형 07 색칠하는 경우의 수", "유형 08 수형도를 이용하는 경우의 수", "유형 09 순열의 수", "유형 10 이웃하는 순열의 수", "유형 11 이웃하지 않는 순열의 수", "유형 12 자리에 대한 조건이 있는 순열의 수", "유형 13 '적어도'의 조건이 있는 순열의 수", "유형 14 자연수의 개수", "유형 15 사전식으로 배열하는 경우의 수", "유형 16 nPr와 nCr의 계산", "유형 17 nPr와 nCr를 이용한 증명", "유형 18 조합의 수", "유형 19 특정한 것을 포함하거나 포함하지 않는 조합의 수", "유형 20 '적어도'의 조건이 있는 조합의 수", "유형 21 뽑아서 나열하는 경우의 수", "유형 22 직선과 대각선의 개수", "유형 23 다각형의 개수", "유형 24 평행사변형의 개수", "유형 25 분할하는 경우의 수", "유형 26 분할한 후 분배하는 경우의 수", "유형 27 대진표 작성하기"]
+            },
+            "V. 행렬": {
+                "10 행렬과 그 연산": ["유형 01 행렬의 (i, j) 성분", "유형 02 두 행렬이 서로 같을 조건", "유형 03 행렬의 덧셈, 뺄셈, 실수배", "유형 04 행렬에 대한 두 등식이 주어진 경우", "유형 05 행렬의 곱셈", "유형 06 행렬의 거듭제곱; A² 구하기", "유형 07 행렬의 거듭제곱; 규칙 찾기", "유형 08 행렬의 거듭제곱; A^n=E의 이용", "유형 09 행렬의 곱셈의 실생활에의 활용", "유형 10 행렬의 곱셈에 대한 성질 (1)", "유형 11 행렬의 곱셈에 대한 성질 (2)", "유형 12 AB=BA가 성립하는 경우", "유형 13 행렬의 변형", "유형 14 단위행렬 E를 포함한 식 (1)", "유형 15 단위행렬 E를 포함한 식 (2)", "유형 16 행렬의 곱셈의 여러 가지 성질", "유형 17 케일리-해밀턴 정리"]
+            }
+        };
+
+        function updateSubUnits() {
+            const main = document.getElementById('mainUnit').value;
+            const subSelect = document.getElementById('subUnit');
+            subSelect.innerHTML = '<option value="">소단원 선택</option>';
+            document.getElementById('typeUnit').innerHTML = '<option value="">소단원 먼저 선택</option>';
+            
+            if(main && categoryData[main]) {
+                Object.keys(categoryData[main]).forEach(sub => {
+                    const opt = document.createElement('option');
+                    opt.value = sub;
+                    opt.textContent = sub;
+                    subSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function updateTypes() {
+            const main = document.getElementById('mainUnit').value;
+            const sub = document.getElementById('subUnit').value;
+            const typeSelect = document.getElementById('typeUnit');
+            typeSelect.innerHTML = '<option value="">유형 선택</option>';
+            
+            if(main && sub && categoryData[main][sub]) {
+                categoryData[main][sub].forEach(type => {
+                    const opt = document.createElement('option');
+                    opt.value = type;
+                    opt.textContent = type;
+                    typeSelect.appendChild(opt);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
