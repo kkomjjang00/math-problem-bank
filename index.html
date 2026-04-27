@@ -60,7 +60,7 @@
         <div id="imageUploadSection" class="mb-6 space-y-4">
             <div class="flex items-center gap-4">
                 <input type="file" id="fileInput" class="hidden" accept="image/*" onchange="handleImageUpload(event)">
-                <button onclick="document.getElementById('fileInput').click()" class="bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 rounded-xl text-sm font-bold transition shadow-md">📸 문제 캡처/이미지 업로드 (자동 분석)</button>
+                <button onclick="document.getElementById('fileInput').click()" class="bg-blue-600 text-white hover:bg-blue-700 px-6 py-3 rounded-xl text-sm font-bold transition shadow-md">📸 이미지 파일 첨부 (화면에 Ctrl+V 붙여넣기 지원)</button>
                 <span id="ocrStatus" class="text-sm font-bold text-blue-600"></span>
             </div>
             <div id="imagePreviewContainer" class="hidden border-2 border-dashed border-slate-300 rounded-xl p-2 text-center relative max-w-lg bg-white">
@@ -72,7 +72,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
                 <label class="block text-sm font-bold text-slate-700 mb-2">문제 지문 (자동입력 및 수정)</label>
-                <textarea id="questionContent" oninput="renderMath()" class="w-full border-2 border-slate-200 p-4 rounded-xl h-48 focus:border-blue-500 outline-none font-mono" placeholder="이미지를 업로드하면 자동으로 텍스트가 추출됩니다.&#10;수동 수정 및 LaTeX 입력 가능합니다."></textarea>
+                <textarea id="questionContent" oninput="renderMath()" class="w-full border-2 border-slate-200 p-4 rounded-xl h-48 focus:border-blue-500 outline-none font-mono" placeholder="이미지를 캡처 후 화면에 붙여넣기(Ctrl+V) 하세요.&#10;수동 수정 및 LaTeX 입력 가능합니다."></textarea>
             </div>
             <div>
                 <label class="block text-sm font-bold text-slate-700 mb-2">수식 실시간 미리보기</label>
@@ -113,7 +113,6 @@
     </div>
 
     <script>
-        // 카테고리 데이터 유지
         const categoryData = {
             "I. 다항식": {
                 "01 다항식의 연산": ["유형 01 다항식의 덧셈과 뺄셈", "유형 02 다항식의 전개식에서 계수 구하기", "유형 03 곱셈 공식을 이용한 다항식의 전개", "유형 04 공통부분이 있는 다항식의 전개", "유형 05 곱셈 공식의 변형; x²+y², x³+y³", "유형 06 곱셈 공식의 변형; x²+1/x², x³+1/x³", "유형 07 곱셈 공식의 변형; a²+b²+c², a³+b³+c³", "유형 08 곱셈 공식을 이용한 수의 계산", "유형 09 다항식의 나눗셈; 몫과 나머지", "유형 10 다항식의 나눗셈; A=BQ+R", "유형 11 몫과 나머지의 변형", "유형 12 다항식의 연산의 도형에의 활용"],
@@ -137,7 +136,6 @@
             }
         };
 
-        // 카테고리 연동 함수
         function updateSubUnits() {
             const main = document.getElementById('mainUnit').value;
             const subSelect = document.getElementById('subUnit');
@@ -170,13 +168,10 @@
             }
         }
 
-        // 동적 레이아웃 업데이트
         function updateLayout() {
             const layoutType = document.getElementById('questionLayoutType').value;
-            const imgSection = document.getElementById('imageUploadSection');
             const optSection = document.getElementById('optionsSection');
 
-            // 객관식 보기 섹션 표시 여부
             if (layoutType === 'type1' || layoutType === 'type2') {
                 optSection.classList.remove('hidden');
             } else {
@@ -184,15 +179,14 @@
             }
         }
 
-        // 이미지 업로드 즉시 OCR 실행 핸들러
         let currentImageFile = null;
+        
         async function handleImageUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
 
             currentImageFile = file;
             
-            // 미리보기 표시
             const reader = new FileReader();
             reader.onload = (e) => {
                 const previewImg = document.getElementById('imagePreview');
@@ -201,7 +195,6 @@
             };
             reader.readAsDataURL(file);
 
-            // 파일 업로드 즉시 OCR 실행
             await runOCR();
         }
 
@@ -213,7 +206,6 @@
             currentImageFile = null;
         }
 
-        // Tesseract OCR 자동 실행 및 스마트 필터링 로직
         async function runOCR() {
             if (!currentImageFile) return;
             const statusText = document.getElementById('ocrStatus');
@@ -221,41 +213,34 @@
             const numInput = document.getElementById('questionNumInput');
             const difficultySelect = document.getElementById('difficultySelect');
             
-            // 로딩 UI 표시
             statusText.textContent = "⏳ 이미지를 분석하여 문제를 정리 중입니다...";
 
             try {
                 const result = await Tesseract.recognize(currentImageFile, 'kor+eng');
                 const text = result.data.text;
                 
-                // --- [스마트 필터링 로직] ---
-                
-                // 1. 문제 번호 추출 (3~4자리 숫자)
                 const questionNumMatch = text.match(/\b([0-9]{3,4})\b/);
                 let questionNum = "";
                 if (questionNumMatch) {
                     questionNum = questionNumMatch[1];
-                    numInput.value = questionNum; // 전용 입력칸에 자동 삽입
+                    numInput.value = questionNum;
                 }
 
-                // 2. 난이도 추출 및 자동 선택
                 if (text.includes('최상')) {
                     difficultySelect.value = '최상';
                 } else if (text.includes('상') || text.includes('©') || text.includes('®')) { 
-                    difficultySelect.value = '상'; // 아이콘 깨짐 방어 코드
+                    difficultySelect.value = '상';
                 } else if (text.includes('하')) {
                     difficultySelect.value = '하';
                 } else if (text.includes('대표 문제') || text.includes('대표문제') || text.includes('중')) {
                     difficultySelect.value = '중';
                 }
 
-                // 3. 지문 텍스트 삽입 (앞쪽 번호 및 잡음 제거 후 삽입)
-                // 완벽하진 않더라도 수동 수고를 크게 덜어줍니다.
                 let cleanedText = text.replace(/^[0-9]{3,4}/, '').trim(); 
                 textArea.value = cleanedText; 
                 
                 statusText.textContent = `✅ 분석 완료! (인식된 문제: ${questionNum || '알수없음'})`;
-                renderMath(); // 텍스트 입력 후 수식 렌더링
+                renderMath();
                 
             } catch (error) {
                 statusText.textContent = "❌ 분석 오류가 발생했습니다.";
@@ -263,7 +248,6 @@
             }
         }
 
-        // KaTeX 수식 실시간 렌더링
         function renderMath() {
             const rawText = document.getElementById('questionContent').value;
             const previewArea = document.getElementById('mathPreview');
@@ -282,7 +266,6 @@
             });
         }
 
-        // DB 저장을 위한 JSON 객체화
         function saveQuestionData() {
             const options = [];
             if(document.getElementById('questionLayoutType').value.includes('1') || document.getElementById('questionLayoutType').value.includes('2')) {
@@ -316,23 +299,19 @@
             alert('콘솔(F12)을 열어 완성된 DB JSON 데이터를 확인해 보세요!');
         }
 
-        // 초기 실행
         updateLayout();
-        // --- [클립보드 이미지 붙여넣기(Ctrl+V) 지원 로직] ---
-        window.addEventListener('paste', async (event) => {
-            // 클립보드에 있는 데이터 아이템들을 가져옵니다.
+
+        // --- 클립보드 붙여넣기 (Ctrl + V) 이벤트 리스너 ---
+        document.addEventListener('paste', async (event) => {
             const items = (event.clipboardData || window.clipboardData).items;
             
             for (let i = 0; i < items.length; i++) {
-                // 클립보드 데이터 중 '이미지' 타입이 있는지 확인합니다.
                 if (items[i].type.indexOf('image') !== -1) {
                     const file = items[i].getAsFile();
                     if (!file) continue;
-        
-                    // 기존 파일 업로드 로직과 동일하게 currentImageFile에 할당
+
                     currentImageFile = file;
-        
-                    // 1. 이미지가 들어오면 즉시 미리보기 화면 업데이트
+                    
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         const previewImg = document.getElementById('imagePreview');
@@ -340,12 +319,9 @@
                         document.getElementById('imagePreviewContainer').classList.remove('hidden');
                     };
                     reader.readAsDataURL(file);
-        
-                    // 2. 이미지가 붙여넣어지자마자 즉시 OCR 및 필터링 자동 실행
+
                     await runOCR();
-                    
-                    // 이미지를 하나 찾아서 처리했으므로 반복문 종료
-                    break; 
+                    break;
                 }
             }
         });
