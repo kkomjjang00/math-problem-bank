@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>고등수학 문제은행 등록 시스템</title>
+    <title>고등수학 문제은행 등록 시스템 (지능형)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
 <body class="bg-slate-50 p-4 md:p-10">
-    <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-2xl shadow-2xl border border-slate-200">
-        <h1 class="text-3xl font-extrabold text-slate-800 mb-2">📝 문제 등록 시스템</h1>
-        <p class="text-slate-500 mb-8 border-b pb-4">고등수학(상) 전 단원 유형 수록</p>
+    <div class="max-w-5xl mx-auto bg-white p-6 md:p-10 rounded-2xl shadow-2xl border border-slate-200">
+        <h1 class="text-3xl font-extrabold text-slate-800 mb-2">📝 지능형 문제 등록 대시보드</h1>
+        <p class="text-slate-500 mb-8 border-b pb-4">이미지 자동 인식 및 목차 분류 지원 시스템</p>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div>
                 <label class="block text-sm font-bold text-slate-700 mb-2">1. 대단원</label>
                 <select id="mainUnit" class="w-full border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none" onchange="updateSubUnits()">
@@ -23,14 +27,12 @@
                     <option value="V. 행렬">V. 행렬</option>
                 </select>
             </div>
-
             <div>
                 <label class="block text-sm font-bold text-slate-700 mb-2">2. 소단원</label>
                 <select id="subUnit" class="w-full border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none" onchange="updateTypes()">
                     <option value="">대단원 먼저 선택</option>
                 </select>
             </div>
-
             <div>
                 <label class="block text-sm font-bold text-slate-700 mb-2">3. 유형</label>
                 <select id="typeUnit" class="w-full border-2 border-slate-200 p-3 rounded-xl focus:border-blue-500 outline-none">
@@ -39,41 +41,74 @@
             </div>
         </div>
 
-        <div class="space-y-4">
-            <div>
-                <label class="block text-sm font-bold text-slate-700 mb-2">문제 지문 및 보기</label>
-                <textarea class="w-full border-2 border-slate-200 p-4 rounded-xl h-64 focus:border-blue-500 outline-none font-mono" placeholder="지문을 입력하세요. 수식은 LaTeX 형식을 권장합니다."></textarea>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">정답</label>
-                    <input type="text" class="w-full border-2 border-slate-200 p-3 rounded-xl" placeholder="예: 1번">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">난이도</label>
-                    <select class="w-full border-2 border-slate-200 p-3 rounded-xl">
-                        <option>하</option>
-                        <option selected>중</option>
-                        <option>상</option>
-                        <option>최상</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-4 py-4">
-                <input type="file" id="fileInput" class="hidden">
-                <button onclick="document.getElementById('fileInput').click()" class="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded-lg text-sm font-bold transition">이미지 첨부</button>
-                <span class="text-xs text-slate-400">이미지 파일이 있을 경우 업로드하세요.</span>
-            </div>
-
-            <button onclick="alert('데이터가 임시 보관되었습니다. 서버 연동이 필요합니다.')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-1">
-                문제 저장하기
-            </button>
+        <div class="mb-6 p-4 bg-slate-100 rounded-xl border border-slate-200">
+            <label class="block text-sm font-bold text-slate-700 mb-2">문제 구성 유형 선택</label>
+            <select id="questionLayoutType" class="w-full border-2 border-white p-3 rounded-xl focus:border-blue-500 outline-none" onchange="updateLayout()">
+                <option value="type1">유형 1: 문제 + 보기 (객관식)</option>
+                <option value="type2">유형 2: 문제 + 그림 + 보기 (객관식)</option>
+                <option value="type3">유형 3: 문제 (주관식/서술형)</option>
+                <option value="type4">유형 4: 문제 + 그림 (주관식/서술형)</option>
+            </select>
         </div>
+
+        <div id="imageUploadSection" class="mb-6 space-y-4">
+            <div class="flex items-center gap-4">
+                <input type="file" id="fileInput" class="hidden" accept="image/*" onchange="handleImageUpload(event)">
+                <button onclick="document.getElementById('fileInput').click()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-2 rounded-lg text-sm font-bold transition">📸 문제 캡처/이미지 첨부</button>
+                <button id="ocrBtn" onclick="runOCR()" class="hidden bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition">✨ 텍스트 자동 인식 (OCR)</button>
+                <span id="ocrStatus" class="text-xs text-slate-500"></span>
+            </div>
+            <div id="imagePreviewContainer" class="hidden border-2 border-dashed border-slate-300 rounded-xl p-2 text-center relative max-w-lg">
+                <button onclick="clearImage()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600">X</button>
+                <img id="imagePreview" src="" alt="미리보기" class="max-h-64 mx-auto rounded">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">문제 지문 입력 (LaTeX 지원)</label>
+                <textarea id="questionContent" oninput="renderMath()" class="w-full border-2 border-slate-200 p-4 rounded-xl h-48 focus:border-blue-500 outline-none font-mono" placeholder="지문을 입력하거나 OCR로 추출하세요.&#10;수식 예시: \sqrt{x^2 + 1}"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">수식 미리보기 (Preview)</label>
+                <div id="mathPreview" class="w-full border-2 border-slate-100 bg-slate-50 p-4 rounded-xl h-48 overflow-auto text-slate-800"></div>
+            </div>
+        </div>
+
+        <div id="optionsSection" class="mb-6">
+            <label class="block text-sm font-bold text-slate-700 mb-2">객관식 보기</label>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
+                <input type="text" class="border-2 border-slate-200 p-2 rounded-lg" placeholder="① 번">
+                <input type="text" class="border-2 border-slate-200 p-2 rounded-lg" placeholder="② 번">
+                <input type="text" class="border-2 border-slate-200 p-2 rounded-lg" placeholder="③ 번">
+                <input type="text" class="border-2 border-slate-200 p-2 rounded-lg" placeholder="④ 번">
+                <input type="text" class="border-2 border-slate-200 p-2 rounded-lg" placeholder="⑤ 번">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 mb-8">
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">정답</label>
+                <input type="text" id="answerInput" class="w-full border-2 border-slate-200 p-3 rounded-xl" placeholder="예: 3번 또는 15">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-slate-700 mb-2">난이도</label>
+                <select class="w-full border-2 border-slate-200 p-3 rounded-xl">
+                    <option>하</option>
+                    <option selected>중</option>
+                    <option>상</option>
+                    <option>최상</option>
+                </select>
+            </div>
+        </div>
+
+        <button onclick="saveQuestionData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-1 text-lg">
+            💾 구조화된 데이터로 저장하기
+        </button>
     </div>
 
     <script>
+        // 기존 카테고리 데이터 유지
         const categoryData = {
             "I. 다항식": {
                 "01 다항식의 연산": ["유형 01 다항식의 덧셈과 뺄셈", "유형 02 다항식의 전개식에서 계수 구하기", "유형 03 곱셈 공식을 이용한 다항식의 전개", "유형 04 공통부분이 있는 다항식의 전개", "유형 05 곱셈 공식의 변형; x²+y², x³+y³", "유형 06 곱셈 공식의 변형; x²+1/x², x³+1/x³", "유형 07 곱셈 공식의 변형; a²+b²+c², a³+b³+c³", "유형 08 곱셈 공식을 이용한 수의 계산", "유형 09 다항식의 나눗셈; 몫과 나머지", "유형 10 다항식의 나눗셈; A=BQ+R", "유형 11 몫과 나머지의 변형", "유형 12 다항식의 연산의 도형에의 활용"],
@@ -97,6 +132,7 @@
             }
         };
 
+        // 카테고리 연동 함수
         function updateSubUnits() {
             const main = document.getElementById('mainUnit').value;
             const subSelect = document.getElementById('subUnit');
@@ -128,6 +164,118 @@
                 });
             }
         }
+
+        // 동적 레이아웃 업데이트 함수
+        function updateLayout() {
+            const layoutType = document.getElementById('questionLayoutType').value;
+            const imgSection = document.getElementById('imageUploadSection');
+            const optSection = document.getElementById('optionsSection');
+
+            // 이미지 업로드 섹션 표시 여부 (유형 2, 4)
+            if (layoutType === 'type2' || layoutType === 'type4') {
+                imgSection.classList.remove('hidden');
+            } else {
+                imgSection.classList.add('hidden');
+                clearImage(); // 숨길 때 이미 초기화
+            }
+
+            // 객관식 보기 섹션 표시 여부 (유형 1, 2)
+            if (layoutType === 'type1' || layoutType === 'type2') {
+                optSection.classList.remove('hidden');
+            } else {
+                optSection.classList.add('hidden');
+            }
+        }
+
+        // 이미지 업로드 및 미리보기 핸들러
+        let currentImageFile = null;
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            currentImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const previewImg = document.getElementById('imagePreview');
+                previewImg.src = e.target.result;
+                document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                document.getElementById('ocrBtn').classList.remove('hidden'); // OCR 버튼 활성화
+                document.getElementById('ocrStatus').textContent = "이미지 준비 완료. OCR을 실행해보세요!";
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearImage() {
+            document.getElementById('fileInput').value = '';
+            document.getElementById('imagePreview').src = '';
+            document.getElementById('imagePreviewContainer').classList.add('hidden');
+            document.getElementById('ocrBtn').classList.add('hidden');
+            document.getElementById('ocrStatus').textContent = "";
+            currentImageFile = null;
+        }
+
+        // Tesseract OCR 실행 함수
+        async function runOCR() {
+            if (!currentImageFile) return;
+            const statusText = document.getElementById('ocrStatus');
+            const textArea = document.getElementById('questionContent');
+            
+            statusText.textContent = "⏳ 문자 인식 중입니다... 잠시만 기다려주세요.";
+            try {
+                const result = await Tesseract.recognize(currentImageFile, 'kor+eng');
+                textArea.value += "\n" + result.data.text; // 기존 내용에 추가
+                statusText.textContent = "✅ 인식 완료!";
+                renderMath(); // 텍스트 입력 후 수식 다시 렌더링
+                
+                // 간단한 키워드 매칭 테스트 (예: 이차함수)
+                if(result.data.text.includes("이차함수")) {
+                    alert("인식된 텍스트에서 '이차함수' 키워드가 감지되었습니다. 목차를 조정해보세요.");
+                }
+            } catch (error) {
+                statusText.textContent = "❌ 인식 오류가 발생했습니다.";
+                console.error(error);
+            }
+        }
+
+        // KaTeX 수식 실시간 렌더링 함수
+        function renderMath() {
+            const rawText = document.getElementById('questionContent').value;
+            const previewArea = document.getElementById('mathPreview');
+            
+            // 텍스트를 HTML 안전하게 변환 후, 줄바꿈 유지
+            const escapedText = rawText.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+            previewArea.innerHTML = escapedText;
+
+            // KaTeX 렌더링 실행 (기본 델리미터: $$ 및 $)
+            renderMathInElement(previewArea, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false},
+                    {left: "\\[", right: "\\]", display: true}
+                ],
+                throwOnError: false
+            });
+        }
+
+        // 데이터 저장 (테스트용 콘솔 출력)
+        function saveQuestionData() {
+            alert('F12 개발자 도구의 콘솔(Console)에서 구조화된 JSON 데이터를 확인하세요!');
+            const data = {
+                main: document.getElementById('mainUnit').value,
+                sub: document.getElementById('subUnit').value,
+                type: document.getElementById('typeUnit').value,
+                layoutType: document.getElementById('questionLayoutType').value,
+                content: document.getElementById('questionContent').value,
+                answer: document.getElementById('answerInput').value,
+                hasImage: !!currentImageFile,
+                timestamp: new Date().toISOString()
+            };
+            console.log("저장될 데이터 객체:", data);
+        }
+
+        // 초기 실행
+        updateLayout();
     </script>
 </body>
 </html>
