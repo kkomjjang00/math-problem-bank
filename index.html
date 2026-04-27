@@ -318,6 +318,37 @@
 
         // 초기 실행
         updateLayout();
+        // --- [클립보드 이미지 붙여넣기(Ctrl+V) 지원 로직] ---
+        window.addEventListener('paste', async (event) => {
+            // 클립보드에 있는 데이터 아이템들을 가져옵니다.
+            const items = (event.clipboardData || window.clipboardData).items;
+            
+            for (let i = 0; i < items.length; i++) {
+                // 클립보드 데이터 중 '이미지' 타입이 있는지 확인합니다.
+                if (items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    if (!file) continue;
+        
+                    // 기존 파일 업로드 로직과 동일하게 currentImageFile에 할당
+                    currentImageFile = file;
+        
+                    // 1. 이미지가 들어오면 즉시 미리보기 화면 업데이트
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const previewImg = document.getElementById('imagePreview');
+                        previewImg.src = e.target.result;
+                        document.getElementById('imagePreviewContainer').classList.remove('hidden');
+                    };
+                    reader.readAsDataURL(file);
+        
+                    // 2. 이미지가 붙여넣어지자마자 즉시 OCR 및 필터링 자동 실행
+                    await runOCR();
+                    
+                    // 이미지를 하나 찾아서 처리했으므로 반복문 종료
+                    break; 
+                }
+            }
+        });
     </script>
 </body>
 </html>
